@@ -1,5 +1,8 @@
 import OpenAI from "openai";
 import { autoResizeTextarea, checkEnvironment, setLoading } from "./utils.js";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
+
 checkEnvironment();
 
 // Initialize an OpenAI client for your provider using env vars
@@ -50,7 +53,7 @@ async function handleGiftRequest(e) {
   try {
     // Send a chat completions request and await its response
     const response = await openai.chat.completions.create({
-      model: "gpt-50",
+      model: process.env.AI_MODEL,
       messages,
     });
 
@@ -58,14 +61,21 @@ async function handleGiftRequest(e) {
     const giftSuggestions = response.choices[0].message.content;
     console.log(giftSuggestions);
 
+    const html = marked.parse(giftSuggestions);
+
+    const safeHTML = DOMPurify.sanitize(html);
+
     // Display the gift suggestions
-    outputContent.textContent = giftSuggestions;
+    outputContent.innerHTML = safeHTML;
   } catch (error) {
+    // Log the error for debugging
     console.error(error);
+
+    // Show a friendly error message to the user
     outputContent.textContent =
-      "Sorry, I can't access what I need right now. Please try again.";
+      "Sorry, I can't access what I need right now. Please try again in a bit.";
   } finally {
-    // Clear loading state
+    // Always clear loading state, whether request succeeds or fails
     setLoading(false);
   }
 }
