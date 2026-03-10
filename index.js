@@ -26,6 +26,7 @@ const messages = [
     role: "system",
     content: `You are the Gift Genie!
     Make your gift suggestions thoughtful and practical.
+    The user will describe the gift's recipient. 
     Your response must be under 100 words. 
     Skip intros and conclusions. 
     Only output gift suggestions.`,
@@ -43,23 +44,30 @@ async function handleGiftRequest(e) {
   // Set loading state
   setLoading(true);
 
-  messages.push({
-    role: "user",
-    content: userPrompt,
-  });
+  // Add user message to global messages array
+  messages.push({ role: "user", content: userPrompt });
 
-  const response = await openai.chat.completions.create({
-    model: process.env.AI_MODEL,
-    messages,
-  });
+  try {
+    // Send a chat completions request and await its response
+    const response = await openai.chat.completions.create({
+      model: "gpt-50",
+      messages,
+    });
 
-  console.log(response);
-  const giftSuggestions = response.choices[0].message.content;
+    // Extract gift suggestions from the assistant message's content
+    const giftSuggestions = response.choices[0].message.content;
+    console.log(giftSuggestions);
 
-  outputContent.textContent = giftSuggestions;
-
-  // Clear loading state
-  setLoading(false);
+    // Display the gift suggestions
+    outputContent.textContent = giftSuggestions;
+  } catch (error) {
+    console.error(error);
+    outputContent.textContent =
+      "Sorry, I can't access what I need right now. Please try again.";
+  } finally {
+    // Clear loading state
+    setLoading(false);
+  }
 }
 
 start();
